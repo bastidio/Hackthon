@@ -1,5 +1,4 @@
-def mensajeBienvenida():
-    ancho=80
+def mensajeBienvenida(ancho):
     print(
     "=" * ancho + "\n" +
     "BIENVENIDO/A AL SISTEMA DE INSCRIPCIÓN DE SKILLMATCH".center(ancho) + "\n" +
@@ -14,6 +13,13 @@ def mensajeBienvenida():
     "Con esta información se organizarán los equipos equilibradamente.".center(ancho) + "\n" +
     "=" * ancho
     )
+
+
+def validarNombre(nombre):
+    while len(nombre)<3:
+        print("El nombre es demasiado corto, ingrese nuevamente")
+        nombre=input("Ingrese su nombre: ").title()
+    return nombre
 
 def validarDNI(dni,listaDNI):
     while dni.isdigit()==False:
@@ -30,12 +36,6 @@ def validarDNI(dni,listaDNI):
         dni=dni.replace(".","")
     return dni
 
-def validarNombre(nombre):
-    while len(nombre)<3:
-        print("El nombre es demasiado corto, ingrese nuevamente")
-        nombre=input("Ingrese su nombre: ").title()
-    return nombre
-
 
 def cargaParticipantes(listaNombre,listaDNI,equipo):
     nombre=input("Ingrese su nombre: ").title()
@@ -45,7 +45,7 @@ def cargaParticipantes(listaNombre,listaDNI,equipo):
     dni=validarDNI(dni,listaDNI)
     listaDNI.append(dni)
     equipo.append(dni)
-    return listaNombre,listaDNI,equipo
+
 
 def registrar_edad(edad):
     if edad <= 1:
@@ -59,12 +59,11 @@ def registrar_edad(edad):
     return valor
     
 
-def pregExp():
-    preg = input("con cuantos años de experiencias cuentas: ")
-    while preg.isdigit() != True :
-        preg = input("solo puedes poner años con numeros: ")
-    preg = int(preg)
-    respuesta = registrar_edad(preg)
+def pregExperienciaIt():
+    preg = input("Ingrese la cantidad de años de experiencia que tiene en Informática: ")
+    while preg.isdigit() != True:
+        preg = input("Ingresá la cantidad de años usando solo números: ")
+    respuesta = registrar_edad(int(preg))
     return respuesta
 
 def pregEquipos(contador, equipo):
@@ -86,10 +85,13 @@ def pregEquipos(contador, equipo):
 def main(contador=1, equipo = "nuevo"):
     if equipo == "nuevo":
         equipo = []
-    mensajeBienvenida()
+    if contador == 1:
+        mensajeBienvenida(80)
     listaDNIs=[]
     listaNombres=[]
-    exp = 0
+    experienciaLaboral = 0
     cargaParticipantes(listaNombres,listaDNIs,equipo)
-    exp = pregExp()
+    experienciaLaboral = pregExperienciaIt()
     pregEquipos(contador, equipo)
+    
+    
