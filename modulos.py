@@ -1,4 +1,4 @@
-def mensajeBienvenida(ancho):
+def mensajeBienvenida(ancho):#hola
     print(
         "=" * ancho + "\n" +
         "BIENVENIDO/A AL SISTEMA DE INSCRIPCIÓN DE SKILLMATCH".center(ancho) + "\n" +
@@ -196,3 +196,4 @@ def main(contador=1, equipo="nuevo"):
 
     
     pregEquipos(contador, equipo)
+
