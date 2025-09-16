@@ -1,3 +1,0 @@
-import modulos
-
-modulos.main()
