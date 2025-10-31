@@ -236,8 +236,9 @@ def porcentaje_avanzados_python(niveles_matriz):
     for i in range(len(niveles_matriz)):
         if niveles_matriz[i][0] == "Avanzado":  # columna 0 es Python
             avanzados += 1
-    porcentaje = (avanzados / total) * 100
-    print(f"\nPorcentaje de participantes con nivel Avanzado en Python: {porcentaje:.2f}%\n")
+    porcentaje = lambda parte, total: (parte / total) * 100
+    porcentaje_python = porcentaje(avanzados, total)
+    print(f"\nPorcentaje de participantes con nivel Avanzado en Python: {porcentaje_python:.2f}%\n")
 
 
 def contador_basico_dos_lenguajes(niveles_matriz):
@@ -301,4 +302,5 @@ def main():
     porcentaje_avanzados_python(niveles_matriz)
     porcentaje_equipos_java(equipos_declarados, listaDNIs, niveles_matriz)
     contador_basico_dos_lenguajes(niveles_matriz)
+
     print("¡Gracias por usar el sistema de inscripción de SkillMatch!. Éxitos en el hackathon!")
