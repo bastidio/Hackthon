@@ -304,3 +304,4 @@ def main():
     contador_basico_dos_lenguajes(niveles_matriz)
 
     print("¡Gracias por usar el sistema de inscripción de SkillMatch!. Éxitos en el hackathon!")
+
