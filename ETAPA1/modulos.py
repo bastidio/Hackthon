@@ -1,3 +1,29 @@
+from faker import Faker
+import random
+
+def agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes):
+    fake = Faker("es_ES")
+    faltan = random.randint(1, 4)
+
+    for k in range(faltan):
+        nombre_fake = fake.name()
+        dni_fake = str(random.randint(30000000, 50000000))
+        while dni_fake in listaDNI:
+            dni_fake = str(random.randint(30000000, 50000000))
+
+        listaDNI.append(dni_fake)
+        listaNombres.append(nombre_fake)
+
+        niveles_posibles = ["Nulo", "Básico", "Intermedio", "Avanzado"]
+        niveles = [random.choice(niveles_posibles) for _ in lenguajes]
+
+        linea_fake = f"{grupo};{dni_fake};{nombre_fake};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
+        arch.write(linea_fake)
+
+        print(f"Integrante Faker #{k+1}: {nombre_fake} (DNI: {dni_fake})")
+        for i, lang in enumerate(lenguajes):
+            print(f"  - {lang}: {niveles[i]}")
+
 def mensajeBienvenida():
     print(
         "=" * 80 + "\n" +
@@ -346,35 +372,45 @@ def mostrarEquipos():
 
 def generaArchivo():
     try:
-        arch=open("hackaton.csv","wt")
-    except IOError:
-        print("Error al abrir el archivo")
-    else:
+        arch = open("hackaton.csv", "wt")
         arch.write("GRUPO;DNI;NOMBRE;PYTHON;JAVA;C++;JAVASCRIPT;PHP;C#\n")
-        listaDNI=[]
-        grupo=1
+        listaDNI = []
+        listaNombres = []
+        grupo = 1
+        lenguajes = ["Python", "Java", "C++", "JavaScript", "PHP", "C#"]
+    except IOError:
+        print("Error al abrir el archivo.")
+        return
+    else:
+        
+
         while True:
-            dni=validarDNI("Ingrese su DNI (entre 7 y 8 caracteres)(Vacio para terminar): ",7,8)
-            if dni=="":
+            dni = validarDNI("Ingrese su DNI (entre 7 y 8 caracteres)(Vacío para terminar): ", 7, 8)
+            if dni == "":
                 break
             if dni in listaDNI:
-                print("Este DNI ya ha sido registrado. Vuelva a intentar")
+                print("Este DNI ya ha sido registrado. Vuelva a intentar.")
                 continue
-            else:
-                nombre=validarNombre("Ingrese su nombre y apellido: ",3)
-                print (nombre)
-                niveles=[]
-                niveles=cargarHabilidades()
-                linea=f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
-                arch.write(linea)
-                listaDNI.append(dni)
-                seguirMismo = input("¿Agregar otro participante a ESTE grupo? (si/no): ").strip().lower()
-                while seguirMismo not in ("si", "no"):
-                    seguirMismo = input("Responda si/no: ").strip().lower()
-                if seguirMismo == "no":
-                    grupo += 1
+
+            nombre = validarNombre("Ingrese su nombre y apellido: ", 3).title()
+            listaDNI.append(dni)
+            listaNombres.append(nombre)
+
+            niveles = cargarHabilidades()
+
+            linea = f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
+            arch.write(linea)
+            print(f"{nombre} agregado al grupo {grupo}.\n")
+
+            completar = input("¿Desea completar su equipo automáticamente con Faker? (si/no): ").strip().lower()
+            while completar not in ("si", "no"):
+                completar = input("Responda si/no: ").strip().lower()
+
+            if completar == "si":
+                agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes)
+
         arch.close()
-        print("Archivo generado con exito.")
+        print("Archivo generado con éxito.")
 
 
 def generaDiccionario(dicc):
@@ -575,6 +611,7 @@ def generaReporteCantidadIntegrantes(dicc):
 
 def main():
     mensajeBienvenida()
+    diccionario={}
     generarArchivoUsuarios()  # asegura usuarios.csv con encabezado
 
     while True:
@@ -607,6 +644,10 @@ def main():
             eliminarUsuario()
         elif op == "6":
             generaArchivo()
+    if diccionario:
+        generaReportePorcentaje(diccionario)
+        generaReportePromedio(diccionario)
+        generaReporteCantidadIntegrantes(diccionario)
         elif op == "7":
             print("\n¡Gracias por usar el sistema de inscripción de SkillMatch! Éxitos en el hackathon.")
             break
@@ -617,4 +658,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
