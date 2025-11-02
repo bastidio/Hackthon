@@ -207,6 +207,76 @@ def cargarHabilidades():
     
     return niveles
 
+def generaReportePorcentaje(dicc):
+    try:
+        arch = open("porcentaje_avanzados_python.csv", "wt", encoding="utf-8")
+    except IOError:
+        print("Error al crear el archivo")
+    else:
+        arch.write(f"TOTAL INTEGRANTES;TOTAL AVANZADOS;PORCENTAJE\n")
+        total_general = 0
+        avanzados_general = 0
+        for grupo, participantes in dicc.items():
+            for dni, niveles in participantes.items():
+                total_general += 1
+                if "python" in niveles:
+                    if str(niveles["python"]).strip().capitalize() == "Avanzado":
+                        avanzados_general += 1
+        porcentaje_general = (avanzados_general / total_general * 100) if total_general > 0 else 0.0
+        arch.write(f"{total_general};{avanzados_general};{porcentaje_general:.2f}%\n")
+        arch.close()
+
+def generaReportePromedio(dicc):
+    puntaje = {"Principiante": 1, "Intermedio": 2, "Avanzado": 3}
+    try:
+        arch = open("promedio_java.csv", "wt", encoding="utf-8")
+    except IOError:
+        print("Error al crear el archivo")
+    else:
+        arch.write("PROMEDIO NIVEL JAVA")
+        suma_total = 0
+        cont_total = 0
+        for grupo, participantes in dicc.items():
+            for dni, niveles in participantes.items():
+                if "java" in niveles:
+                    nivel = str(niveles["java"]).strip().capitalize()
+                    if nivel in puntaje:
+                        suma_total += puntaje[nivel]
+                        cont_total += 1
+        if cont_total == 0:
+            etiqueta = "NULO"
+        else:
+            promedio = suma_total / cont_total
+            if promedio < 1.5:
+                etiqueta = "PRINCIPIANTE"
+            elif promedio < 2.5:
+                etiqueta = "INTERMEDIO"
+            else:
+                etiqueta = "AVANZADO"
+
+        arch.write(f"{etiqueta}\n")
+        arch.close()
+
+def generaReporteCantidadIntegrantes(dicc):
+    try:
+        arch = open("cantidad_integrantes.csv", "wt")
+    except IOError:
+        print("Error al crear el archivo")
+    else:
+        ks = list(dicc)
+        max_c = min_c = len(dicc[ks[0]])
+        gmax = [ks[0]]
+        gmin = [ks[0]]
+        for i in range(1, len(ks)):
+            g = ks[i]; c = len(dicc[g])
+            if c > max_c: max_c, gmax = c, [g]
+            elif c == max_c: gmax.append(g)
+            if c < min_c: min_c, gmin = c, [g]
+            elif c == min_c: gmin.append(g)
+        arch.write(f"MAX;{max_c};{'|'.join(gmax)}\n")
+        arch.write(f"MIN;{min_c};{'|'.join(gmin)}\n")
+        arch.close()
+
 
 def main():
     mensajeBienvenida()
@@ -215,4 +285,5 @@ def main():
     print("¡Gracias por usar el sistema de inscripción de SkillMatch!. Éxitos en el hackathon!")
 
 if __name__ == "__main__":
+
     main()
