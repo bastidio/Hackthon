@@ -209,7 +209,7 @@ def cargarHabilidades():
 
 def generaReportePorcentaje(dicc):
     try:
-        arch = open("porcentaje_avanzados_python.csv", "wt", encoding="utf-8")
+        arch = open("porcentaje_avanzados_python.csv", "wt")
     except IOError:
         print("Error al crear el archivo")
     else:
@@ -229,7 +229,7 @@ def generaReportePorcentaje(dicc):
 def generaReportePromedio(dicc):
     puntaje = {"Principiante": 1, "Intermedio": 2, "Avanzado": 3}
     try:
-        arch = open("promedio_java.csv", "wt", encoding="utf-8")
+        arch = open("promedio_java.csv", "wt")
     except IOError:
         print("Error al crear el archivo")
     else:
@@ -287,3 +287,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
