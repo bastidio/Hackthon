@@ -280,11 +280,17 @@ def generaReporteCantidadIntegrantes(dicc):
 
 def main():
     mensajeBienvenida()
+    diccionario={}
     generaArchivo()
+    if diccionario:
+        generaReportePorcentaje(diccionario)
+        generaReportePromedio(diccionario)
+        generaReporteCantidadIntegrantes(diccionario)
 
     print("¡Gracias por usar el sistema de inscripción de SkillMatch!. Éxitos en el hackathon!")
 
 if __name__ == "__main__":
 
     main()
+
 
