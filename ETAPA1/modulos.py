@@ -16,17 +16,11 @@ def mensajeBienvenida():
 
 
 def validarDNI(texto,minimo,maximo):
-    while True:
-        try:
-            dni=input(texto)
-            if dni=="":
-                break
-            if dni.isdigit() and minimo<=len(dni)<=maximo:
-                break
-            else:
-                raise ValueError
-        except ValueError:
-            print(f"Error, ingrese un DNI con entre {minimo} y {maximo} dígitos.")
+    validar = lambda d: d == "" or (d.isdigit() and minimo <= len(d) <= maximo)
+    dni = input(texto).strip()
+    if not validar(dni):
+        print(f"Error, ingrese un DNI con entre {minimo} y {maximo} dígitos.")
+        return validarDNI(texto, minimo, maximo)
     return dni
 
 
@@ -57,6 +51,299 @@ def validarNumero(texto, minimo, maximo):
     return valorEntero
 
 
+def generarArchivoUsuarios():
+    try:
+        arch = open("usuarios.csv", "rt")
+    except IOError:
+        try:
+            arch = open("usuarios.csv", "wt")
+        except IOError:
+            print("Error al abrir el archivo de usuarios.")
+        else:
+            arch.write("usuario,nombre,dni,contraseña\n")
+            arch.close()
+    else:
+        encabezado = arch.readline()
+        arch.close()
+        if not encabezado or "usuario,nombre,dni,contraseña" not in encabezado.strip().lower():
+            try:
+                arch = open("usuarios.csv", "wt")
+            except IOError:
+                print("Error al abrir el archivo de usuarios.")
+            else:
+                arch.write("usuario,nombre,dni,contraseña\n")
+                arch.close()
+
+
+def usuarioExistente(usuario):
+    try:
+        arch = open("usuarios.csv", "rt")
+    except IOError:
+        print("Error al abrir el archivo de usuarios.")
+        return False
+    else:
+        encabezado = True
+        usuarioExiste = False
+        for linea in arch:
+            if encabezado:
+                encabezado = False
+                continue
+            partes = linea.strip("\n").split(",")
+            if len(partes) != 4:
+                continue
+            u = partes[0].strip().lower()
+            if u == usuario.strip().lower():
+                usuarioExiste = True
+                break
+        arch.close()
+        return usuarioExiste
+
+
+def controlCredenciales(usuario, clave):
+    try:
+        arch = open("usuarios.csv", "rt")
+    except IOError:
+        print("Error al abrir el archivo de usuarios.")
+        return False
+    else:
+        encabezado = True
+        ok = False
+        for linea in arch:
+            if encabezado:
+                encabezado = False
+                continue
+            partes = linea.strip("\n").split(",")
+            if len(partes) != 4:
+                continue
+            u, n, d, c = [p.strip() for p in partes]
+            if u.lower() == usuario.strip().lower() and c == clave:
+                ok = True
+                break
+        arch.close()
+        return ok
+
+
+def registrarUsuario():
+    generarArchivoUsuarios()
+
+    while True:
+        usuario = input("Ingrese un nombre de usuario: ").strip().lower()
+        if not usuario or "," in usuario:
+            print("Usuario inválido (no vacío, sin comas).")
+            continue
+        if usuarioExistente(usuario):
+            print("Ese usuario ya existe. Ingrese otro.")
+            continue
+        break
+
+    while True:
+        try:
+            clave = input("Ingrese una contraseña (mín. 6 caracteres): ").strip()
+            if len(clave) >= 6:
+                break
+            else:
+                raise ValueError
+        except ValueError:
+            print("La contraseña debe tener al menos 6 caracteres.")
+
+    try:
+        arch = open("usuarios.csv", "at")
+    except IOError:
+        print("Error al abrir el archivo de usuarios para escribir.")
+    else:
+        arch.write(f"{usuario},{clave}\n")
+        arch.close()
+        print(f"Usuario '{usuario}' registrado correctamente.")
+
+
+def iniciarSesion():
+    usuario = input("Usuario: ").strip().lower()
+    clave = input("Contraseña: ").strip()
+    if controlCredenciales(usuario, clave):
+        print(f"¡Bienvenido/a, {usuario}!")
+        return True
+    else:
+        print("Usuario o contraseña incorrectos.")
+        return False
+
+
+def modificarUsuario():
+    usuarioActual = input("Usuario actual: ").strip().lower()
+    claveActual = input("Contraseña actual: ").strip()
+
+    if not controlCredenciales(usuarioActual, claveActual):
+        print("Usuario/clave incorrectos.")
+        return
+
+    while True:
+        nuevoUsuario = input("Nuevo nombre de usuario: ").strip().lower()
+        if not nuevoUsuario or "," in nuevoUsuario:
+            print("Usuario inválido (no vacío, sin comas).")
+            continue
+        if usuarioExistente(nuevoUsuario):
+            print("Ese usuario ya existe. Ingrese otro.")
+            continue
+        break
+
+    try:
+        arch = open("usuarios.csv", "rt")
+    except IOError:
+        print("Error al abrir el archivo de usuarios.")
+    else:
+        encabezado = arch.readline()
+        filas = []
+        for linea in arch:
+            partes = linea.rstrip("\n").split(",")
+            if len(partes) != 4:
+                continue
+            u, n, d, c = partes
+            if u.strip().lower() == usuarioActual and c.strip() == claveActual:
+                filas.append(f"{nuevoUsuario},{n},{d},{c}\n")
+            else:
+                filas.append(linea)
+        arch.close()
+
+        try:
+            arch = open("usuarios.csv", "wt")
+        except IOError:
+            print("Error al reescribir el archivo de usuarios.")
+        else:
+            arch.write("usuario,nombre,dni,contraseña\n")
+            for linea in filas:
+                arch.write(linea)
+            arch.close()
+            print("Usuario modificado correctamente.")
+
+
+def modificarClave():
+    usuario = input("Usuario: ").strip().lower()
+    clave = input("Contraseña actual: ").strip()
+
+    if not controlCredenciales(usuario, clave):
+        print("Usuario/clave incorrectos.")
+        return
+
+    while True:
+        try:
+            nueva = input("Nueva contraseña (mín. 6 caracteres): ").strip()
+            if len(nueva) >= 6:
+                break
+            else:
+                raise ValueError
+        except ValueError:
+            print("La contraseña debe tener al menos 6 caracteres.")
+
+    try:
+        arch = open("usuarios.csv", "rt")
+    except IOError:
+        print("Error al abrir el archivo de usuarios.")
+    else:
+        encabezado = arch.readline()
+        filas = []
+        for linea in arch:
+            partes = linea.rstrip("\n").split(",")
+            if len(partes) != 4:
+                continue
+            u, n, d, c = partes
+            if u.strip().lower() == usuario and c.strip() == clave:
+                filas.append(f"{u},{n},{d},{nueva}\n")
+            else:
+                filas.append(linea)
+        arch.close()
+
+        try:
+            arch = open("usuarios.csv", "wt")
+        except IOError:
+            print("Error al reescribir el archivo de usuarios.")
+        else:
+            arch.write("usuario,nombre,dni,contraseña\n")
+            for linea in filas:
+                arch.write(linea)
+            arch.close()
+            print("Contraseña actualizada.")
+
+
+def eliminarUsuario():
+    usuario = input("Usuario a eliminar: ").strip().lower()
+    clave = input("Contraseña: ").strip()
+
+    conf = input(f"¿Seguro que querés eliminar '{usuario}'? (si/no): ").strip().lower()
+    if conf != "si":
+        print("Operación cancelada.")
+        return
+
+    try:
+        arch = open("usuarios.csv", "rt")
+    except IOError:
+        print("Error al abrir el archivo de usuarios.")
+    else:
+        encabezado = arch.readline()
+        filas = []
+        eliminado = False
+        for linea in arch:
+            partes = linea.rstrip("\n").split(",")
+            if len(partes) != 4:
+                continue
+            u, n, d, c = partes
+            if u.strip().lower() == usuario and c.strip() == clave:
+                eliminado = True
+            else:
+                filas.append(linea)
+        arch.close()
+
+        try:
+            arch = open("usuarios.csv", "wt")
+        except IOError:
+            print("Error al reescribir el archivo de usuarios.")
+        else:
+            arch.write("usuario,nombre,dni,contraseña\n")
+            for linea in filas:
+                arch.write(linea)
+            arch.close()
+            if eliminado:
+                print("Usuario eliminado correctamente.")
+            else:
+                print("Usuario/clave incorrectos.")
+
+
+def mostrarEquipos():
+    try:
+        arch = open("hackaton.csv", "rt")
+    except IOError:
+        print("Aún no existe hackaton.csv. Generá el archivo primero.")
+    else:
+        encabezado = True
+        grupos = {}
+        for linea in arch:
+            if encabezado:
+                encabezado = False
+                continue
+            partes = linea.strip().split(";")
+            if len(partes) != 9:
+                continue
+            grupo, dni, nombre = partes[0], partes[1], partes[2]
+            if grupo not in grupos:
+                grupos[grupo] = []
+            grupos[grupo].append((dni, nombre))
+        arch.close()
+
+        if not grupos:
+            print("\nNo hay equipos registrados aún.")
+            return
+
+        print("\n=== Equipos cargados ===")
+        claves = list(grupos.keys())
+        try:
+            claves.sort(key=lambda x: int(x))
+        except:
+            claves.sort()
+
+        for g in claves:
+            print(f"\nGrupo {g}:")
+            for dni, nombre in grupos[g]:
+                print(f"  - {nombre} ({dni})")
+
+
 def generaArchivo():
     try:
         arch=open("hackaton.csv","wt")
@@ -81,10 +368,10 @@ def generaArchivo():
                 linea=f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
                 arch.write(linea)
                 listaDNI.append(dni)
-                seguir_mismo = input("¿Agregar otro participante a ESTE grupo? (si/no): ").strip().lower()
-                while seguir_mismo not in ("si", "no"):
-                    seguir_mismo = input("Responda si/no: ").strip().lower()
-                if seguir_mismo == "no":
+                seguirMismo = input("¿Agregar otro participante a ESTE grupo? (si/no): ").strip().lower()
+                while seguirMismo not in ("si", "no"):
+                    seguirMismo = input("Responda si/no: ").strip().lower()
+                if seguirMismo == "no":
                     grupo += 1
         arch.close()
         print("Archivo generado con exito.")
@@ -92,22 +379,27 @@ def generaArchivo():
 
 def generaDiccionario(dicc):
     try:
-        arch=open("hackaton.csv","rt")
+        arch = open("hackaton.csv", "rt")
     except IOError:
         print("Error al abrir el archivo.")
     else:
+        encabezado = True
         for linea in arch:
-            grupo,dni,nombre,py,java,c,js,php,cs=linea.strip().split(";")
+            if encabezado:
+                encabezado = False
+                continue
+
+            grupo,dni,nombre,py,java,c,js,php,cs = linea.strip().split(";")
             if grupo not in dicc:
-                dicc[grupo]={}
+                dicc[grupo] = {}
             if dni not in dicc[grupo]:
-                dicc[grupo][dni]={}
-            dicc[grupo][dni]["python"]=py
-            dicc[grupo][dni]["java"]=java
-            dicc[grupo][dni]["c++"]=c
-            dicc[grupo][dni]["js"]=js
-            dicc[grupo][dni]["php"]=php
-            dicc[grupo][dni]["c#"]=cs
+                dicc[grupo][dni] = {}
+            dicc[grupo][dni]["python"] = py
+            dicc[grupo][dni]["java"] = java
+            dicc[grupo][dni]["c++"] = c
+            dicc[grupo][dni]["js"] = js
+            dicc[grupo][dni]["php"] = php
+            dicc[grupo][dni]["c#"] = cs
         arch.close()
         return dicc
 
@@ -117,7 +409,7 @@ def cargarHabilidades():
     lenguajes=["Python", "Java", "C++", "JavaScript", "PHP", "C#"]
 
     niveles = ["Nulo"] * len(lenguajes)
-    respuestas_correctas = [0] * len(lenguajes)
+    respuestasCorrectas = [0] * len(lenguajes)
 
     print("\nLenguajes para evaluar:")
     for i in range(len(lenguajes)):
@@ -151,7 +443,7 @@ def cargarHabilidades():
          "(C#) ¿Estructura de selección múltiple?\nA) match\nB) switch\nC) choose"]
     ]
 
-    respuestas_correctas_lista = [
+    respuestasCorrectas_lista = [
         ["B", "A", "B"],
         ["B", "C", "B"],
         ["B", "A", "B"],
@@ -164,22 +456,22 @@ def cargarHabilidades():
 
     while seleccion != 0:
         opcion = validarNumero("\nEligí del listado anterior el lenguaje que conocés. Te haremos unas preguntas sobre el mismo para evaluar tu nivel. Seleccioná uno del 1 al 6: ", 1, 6)
-        lenguaje_indice = opcion - 1
-        while lenguaje_indice in elegidos:
+        lenguajeIndice = opcion - 1
+        while lenguajeIndice in elegidos:
             print("Ya elegiste ese lenguaje. Elegí otro distinto.")
             opcion = validarNumero("\nEligí del listado anterior el lenguaje que conocés. Te haremos unas preguntas sobre el mismo para evaluar tu nivel. Seleccioná uno del 1 al 6: ", 1, 6)
-            lenguaje_indice = opcion - 1
+            lenguajeIndice = opcion - 1
 
         seleccion -= 1
 
-        elegidos.append(lenguaje_indice)
+        elegidos.append(lenguajeIndice)
 
-        print(f"\nPreguntas sobre {lenguajes[lenguaje_indice]}:")
+        print(f"\nPreguntas sobre {lenguajes[lenguajeIndice]}:")
         aciertos = 0
 
-        for pregunta_num in range(3):
-            pregunta = preguntas[lenguaje_indice][pregunta_num]
-            correcta = respuestas_correctas_lista[lenguaje_indice][pregunta_num]
+        for preguntaNum in range(3):
+            pregunta = preguntas[lenguajeIndice][preguntaNum]
+            correcta = respuestasCorrectas_lista[lenguajeIndice][preguntaNum]
             respuesta = input(pregunta + "\nTu respuesta (A/B/C): ").replace(" ","").upper()
             while respuesta not in ["A", "B", "C"]:
                 print("Opción inválida. Responda A, B o C.")
@@ -187,23 +479,23 @@ def cargarHabilidades():
             if respuesta == correcta:
                 aciertos += 1
 
-        respuestas_correctas[lenguaje_indice] = aciertos
+        respuestasCorrectas[lenguajeIndice] = aciertos
 
         if aciertos == 3:
-            niveles[lenguaje_indice] = "Avanzado"
+            niveles[lenguajeIndice] = "Avanzado"
         elif aciertos == 2:
-            niveles[lenguaje_indice] = "Intermedio"
+            niveles[lenguajeIndice] = "Intermedio"
         elif aciertos == 1:
-            niveles[lenguaje_indice] = "Básico"
+            niveles[lenguajeIndice] = "Básico"
         else:
-            niveles[lenguaje_indice] = "Nulo"
+            niveles[lenguajeIndice] = "Nulo"
 
-        print(f"Resultado de {lenguajes[lenguaje_indice]}: {aciertos}/3 - Nivel: {niveles[lenguaje_indice]}")
+        print(f"Resultado de {lenguajes[lenguajeIndice]}: {aciertos}/3 - Nivel: {niveles[lenguajeIndice]}")
 
     print("\nTus resultados finales:")
     for i in range(len(lenguajes)):
         if niveles[i] != "Nulo":
-            print(f"{lenguajes[i]}: {niveles[i]} ({respuestas_correctas[i]}/3)")
+            print(f"{lenguajes[i]}: {niveles[i]} ({respuestasCorrectas[i]}/3)")
     
     return niveles
 
@@ -214,41 +506,43 @@ def generaReportePorcentaje(dicc):
         print("Error al crear el archivo")
     else:
         arch.write(f"TOTAL INTEGRANTES;TOTAL AVANZADOS;PORCENTAJE\n")
-        total_general = 0
-        avanzados_general = 0
+        totalGeneral = 0
+        avanzadosGeneral = 0
         for grupo, participantes in dicc.items():
             for dni, niveles in participantes.items():
-                total_general += 1
+                totalGeneral += 1
                 if "python" in niveles:
                     if str(niveles["python"]).strip().capitalize() == "Avanzado":
-                        avanzados_general += 1
-        porcentaje_general = (avanzados_general / total_general * 100) if total_general > 0 else 0.0
-        arch.write(f"{total_general};{avanzados_general};{porcentaje_general:.2f}%\n")
+                        avanzadosGeneral += 1
+        porcentajeGeneral = (avanzadosGeneral / totalGeneral * 100) if totalGeneral > 0 else 0.0
+        arch.write(f"{totalGeneral};{avanzadosGeneral};{porcentajeGeneral:.2f}%\n")
         arch.close()
 
+
 def generaReportePromedio(dicc):
-    puntaje = {"Principiante": 1, "Intermedio": 2, "Avanzado": 3}
+    puntaje = {"Básico": 1, "Intermedio": 2, "Avanzado": 3}
     try:
         arch = open("promedio_java.csv", "wt")
     except IOError:
         print("Error al crear el archivo")
     else:
-        arch.write("PROMEDIO NIVEL JAVA")
-        suma_total = 0
-        cont_total = 0
+        arch.write("PROMEDIO NIVEL JAVA\n")
+        sumaTotal = 0
+        contTotal = 0
         for grupo, participantes in dicc.items():
             for dni, niveles in participantes.items():
                 if "java" in niveles:
                     nivel = str(niveles["java"]).strip().capitalize()
                     if nivel in puntaje:
-                        suma_total += puntaje[nivel]
-                        cont_total += 1
-        if cont_total == 0:
+                        sumaTotal += puntaje[nivel]
+                        contTotal += 1
+
+        if contTotal == 0:
             etiqueta = "NULO"
         else:
-            promedio = suma_total / cont_total
+            promedio = sumaTotal / contTotal
             if promedio < 1.5:
-                etiqueta = "PRINCIPIANTE"
+                etiqueta = "BÁSICO"
             elif promedio < 2.5:
                 etiqueta = "INTERMEDIO"
             else:
@@ -257,6 +551,7 @@ def generaReportePromedio(dicc):
         arch.write(f"{etiqueta}\n")
         arch.close()
 
+
 def generaReporteCantidadIntegrantes(dicc):
     try:
         arch = open("cantidad_integrantes.csv", "wt")
@@ -264,25 +559,60 @@ def generaReporteCantidadIntegrantes(dicc):
         print("Error al crear el archivo")
     else:
         ks = list(dicc)
-        max_c = min_c = len(dicc[ks[0]])
-        gmax = [ks[0]]
-        gmin = [ks[0]]
+        maxC = minC = len(dicc[ks[0]])
+        gMax = [ks[0]]
+        gMin = [ks[0]]
         for i in range(1, len(ks)):
             g = ks[i]; c = len(dicc[g])
-            if c > max_c: max_c, gmax = c, [g]
-            elif c == max_c: gmax.append(g)
-            if c < min_c: min_c, gmin = c, [g]
-            elif c == min_c: gmin.append(g)
-        arch.write(f"MAX;{max_c};{'|'.join(gmax)}\n")
-        arch.write(f"MIN;{min_c};{'|'.join(gmin)}\n")
+            if c > maxC: maxC, gMax = c, [g]
+            elif c == maxC: gMax.append(g)
+            if c < minC: minC, gMin = c, [g]
+            elif c == minC: gMin.append(g)
+        arch.write(f"MAX;{maxC};{'|'.join(gMax)}\n")
+        arch.write(f"MIN;{minC};{'|'.join(gMin)}\n")
         arch.close()
 
 
 def main():
     mensajeBienvenida()
-    generaArchivo()
+    generarArchivoUsuarios()  # asegura usuarios.csv con encabezado
 
-    print("¡Gracias por usar el sistema de inscripción de SkillMatch!. Éxitos en el hackathon!")
+    while True:
+        print("\n=== MENÚ PRINCIPAL ===")
+        print("1. Registrarse")
+        print("2. Iniciar sesión")
+        print("3. Mostrar equipos")
+        print("4. Modificar usuario o contraseña")
+        print("5. Eliminar usuario")
+        print("6. Cargar participantes")
+        print("7. Salir")
+
+        op = input("Elegí una opción (1-7): ").strip()
+        if op == "1":
+            registrarUsuario()
+        elif op == "2":
+            iniciarSesion()
+        elif op == "3":
+            mostrarEquipos()
+        elif op == "4":
+            print("\n1) Modificar usuario\n2) Modificar contraseña")
+            sub = input("Elegí (1/2): ").strip()
+            if sub == "1":
+                modificarUsuario()
+            elif sub == "2":
+                modificarClave()
+            else:
+                print("Opción inválida.")
+        elif op == "5":
+            eliminarUsuario()
+        elif op == "6":
+            generaArchivo()
+        elif op == "7":
+            print("\n¡Gracias por usar el sistema de inscripción de SkillMatch! Éxitos en el hackathon.")
+            break
+        else:
+            print("Opción inválida. Probá de nuevo.")
+
 
 if __name__ == "__main__":
 
