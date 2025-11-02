@@ -256,25 +256,35 @@ def generaReportePromedio(dicc):
 
         arch.write(f"{etiqueta}\n")
         arch.close()
-
+        
 def generaReporteCantidadIntegrantes(dicc):
     try:
-        arch = open("cantidad_integrantes.csv", "wt")
+        arch = open("cantidad_integrantes.csv", "wt", encoding="utf-8")
     except IOError:
         print("Error al crear el archivo")
     else:
         ks = list(dicc)
-        max_c = min_c = len(dicc[ks[0]])
-        gmax = [ks[0]]
-        gmin = [ks[0]]
-        for i in range(1, len(ks)):
-            g = ks[i]; c = len(dicc[g])
-            if c > max_c: max_c, gmax = c, [g]
-            elif c == max_c: gmax.append(g)
-            if c < min_c: min_c, gmin = c, [g]
-            elif c == min_c: gmin.append(g)
-        arch.write(f"MAX;{max_c};{'|'.join(gmax)}\n")
-        arch.write(f"MIN;{min_c};{'|'.join(gmin)}\n")
+        if len(ks) == 0:
+            arch.write("MAX;0;\n")
+            arch.write("MIN;0;\n")
+        else:
+            arch.write(f"TOTAL DE INTEGRANTES POR GRUPO\n")
+            max_c = min_c = len(dicc[ks[0]])
+            gmax = [ks[0]]
+            gmin = [ks[0]]
+            for i in range(1, len(ks)):
+                g = ks[i]
+                c = len(dicc[g])
+                if c > max_c:
+                    max_c, gmax = c, [g]
+                elif c == max_c:
+                    gmax.append(g)
+                if c < min_c:
+                    min_c, gmin = c, [g]
+                elif c == min_c:
+                    gmin.append(g)
+            arch.write(f"MAX;{max_c};{'|'.join(gmax)}\n")
+            arch.write(f"MIN;{min_c};{'|'.join(gmin)}\n")
         arch.close()
 
 
@@ -282,6 +292,7 @@ def main():
     mensajeBienvenida()
     diccionario={}
     generaArchivo()
+    generaDiccionario(diccionario)
     if diccionario:
         generaReportePorcentaje(diccionario)
         generaReportePromedio(diccionario)
@@ -292,5 +303,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
