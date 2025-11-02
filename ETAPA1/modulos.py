@@ -1,3 +1,29 @@
+from faker import Faker
+import random
+
+def agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes):
+    fake = Faker("es_ES")
+    faltan = random.randint(1, 4)
+
+    for k in range(faltan):
+        nombre_fake = fake.name()
+        dni_fake = str(random.randint(30000000, 50000000))
+        while dni_fake in listaDNI:
+            dni_fake = str(random.randint(30000000, 50000000))
+
+        listaDNI.append(dni_fake)
+        listaNombres.append(nombre_fake)
+
+        niveles_posibles = ["Nulo", "Básico", "Intermedio", "Avanzado"]
+        niveles = [random.choice(niveles_posibles) for _ in lenguajes]
+
+        linea_fake = f"{grupo};{dni_fake};{nombre_fake};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
+        arch.write(linea_fake)
+
+        print(f"Integrante Faker #{k+1}: {nombre_fake} (DNI: {dni_fake})")
+        for i, lang in enumerate(lenguajes):
+            print(f"  - {lang}: {niveles[i]}")
+
 def mensajeBienvenida():
     print(
         "=" * 80 + "\n" +
@@ -59,35 +85,45 @@ def validarNumero(texto, minimo, maximo):
 
 def generaArchivo():
     try:
-        arch=open("hackaton.csv","wt")
-    except IOError:
-        print("Error al abrir el archivo")
-    else:
+        arch = open("hackaton.csv", "wt")
         arch.write("GRUPO;DNI;NOMBRE;PYTHON;JAVA;C++;JAVASCRIPT;PHP;C#\n")
-        listaDNI=[]
-        grupo=1
+        listaDNI = []
+        listaNombres = []
+        grupo = 1
+        lenguajes = ["Python", "Java", "C++", "JavaScript", "PHP", "C#"]
+    except IOError:
+        print("Error al abrir el archivo.")
+        return
+    else:
+        
+
         while True:
-            dni=validarDNI("Ingrese su DNI (entre 7 y 8 caracteres)(Vacio para terminar): ",7,8)
-            if dni=="":
+            dni = validarDNI("Ingrese su DNI (entre 7 y 8 caracteres)(Vacío para terminar): ", 7, 8)
+            if dni == "":
                 break
             if dni in listaDNI:
-                print("Este DNI ya ha sido registrado. Vuelva a intentar")
+                print("Este DNI ya ha sido registrado. Vuelva a intentar.")
                 continue
-            else:
-                nombre=validarNombre("Ingrese su nombre y apellido: ",3)
-                print (nombre)
-                niveles=[]
-                niveles=cargarHabilidades()
-                linea=f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
-                arch.write(linea)
-                listaDNI.append(dni)
-                seguir_mismo = input("¿Agregar otro participante a ESTE grupo? (si/no): ").strip().lower()
-                while seguir_mismo not in ("si", "no"):
-                    seguir_mismo = input("Responda si/no: ").strip().lower()
-                if seguir_mismo == "no":
-                    grupo += 1
+
+            nombre = validarNombre("Ingrese su nombre y apellido: ", 3).title()
+            listaDNI.append(dni)
+            listaNombres.append(nombre)
+
+            niveles = cargarHabilidades()
+
+            linea = f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
+            arch.write(linea)
+            print(f"{nombre} agregado al grupo {grupo}.\n")
+
+            completar = input("¿Desea completar su equipo automáticamente con Faker? (si/no): ").strip().lower()
+            while completar not in ("si", "no"):
+                completar = input("Responda si/no: ").strip().lower()
+
+            if completar == "si":
+                agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes)
+
         arch.close()
-        print("Archivo generado con exito.")
+        print("Archivo generado con éxito.")
 
 
 def generaDiccionario(dicc):
@@ -256,42 +292,25 @@ def generaReportePromedio(dicc):
 
         arch.write(f"{etiqueta}\n")
         arch.close()
-        
+
 def generaReporteCantidadIntegrantes(dicc):
     try:
         arch = open("cantidad_integrantes.csv", "wt")
     except IOError:
         print("Error al crear el archivo")
     else:
-        claves_grupo = []
-        for grupo in dicc:
-            if str(grupo).upper() != "GRUPO":
-                claves_grupo.append(grupo)
-        if len(claves_grupo) == 0:
-            arch.write("MAX;0;\n")
-            arch.write("MIN;0;\n")
-        else:
-            arch.write(f"MAX/MIN;CANTIDAD INTEGRANTES;GRUPO")
-            primer_grupo = claves_grupo[0]
-            maximo_cantidad = len(dicc[primer_grupo])
-            minimo_cantidad = len(dicc[primer_grupo])
-            grupos_maximo = [primer_grupo]
-            grupos_minimo = [primer_grupo]
-            for i in range(1, len(claves_grupo)):
-                grupo_actual = claves_grupo[i]
-                cantidad_integrantes = len(dicc[grupo_actual])
-                if cantidad_integrantes > maximo_cantidad:
-                    maximo_cantidad = cantidad_integrantes
-                    grupos_maximo = [grupo_actual]
-                elif cantidad_integrantes == maximo_cantidad:
-                    grupos_maximo.append(grupo_actual)
-                if cantidad_integrantes < minimo_cantidad:
-                    minimo_cantidad = cantidad_integrantes
-                    grupos_minimo = [grupo_actual]
-                elif cantidad_integrantes == minimo_cantidad:
-                    grupos_minimo.append(grupo_actual)
-            arch.write(f"MAX;{maximo_cantidad};{'|'.join(grupos_maximo)}\n")
-            arch.write(f"MIN;{minimo_cantidad};{'|'.join(grupos_minimo)}\n")
+        ks = list(dicc)
+        max_c = min_c = len(dicc[ks[0]])
+        gmax = [ks[0]]
+        gmin = [ks[0]]
+        for i in range(1, len(ks)):
+            g = ks[i]; c = len(dicc[g])
+            if c > max_c: max_c, gmax = c, [g]
+            elif c == max_c: gmax.append(g)
+            if c < min_c: min_c, gmin = c, [g]
+            elif c == min_c: gmin.append(g)
+        arch.write(f"MAX;{max_c};{'|'.join(gmax)}\n")
+        arch.write(f"MIN;{min_c};{'|'.join(gmin)}\n")
         arch.close()
 
 
@@ -299,7 +318,6 @@ def main():
     mensajeBienvenida()
     diccionario={}
     generaArchivo()
-    generaDiccionario(diccionario)
     if diccionario:
         generaReportePorcentaje(diccionario)
         generaReportePromedio(diccionario)
@@ -310,7 +328,5 @@ def main():
 if __name__ == "__main__":
 
     main()
-
-
 
 
