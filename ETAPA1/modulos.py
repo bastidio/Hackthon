@@ -259,32 +259,39 @@ def generaReportePromedio(dicc):
         
 def generaReporteCantidadIntegrantes(dicc):
     try:
-        arch = open("cantidad_integrantes.csv", "wt", encoding="utf-8")
+        arch = open("cantidad_integrantes.csv", "wt")
     except IOError:
         print("Error al crear el archivo")
     else:
-        ks = list(dicc)
-        if len(ks) == 0:
+        claves_grupo = []
+        for grupo in dicc:
+            if str(grupo).upper() != "GRUPO":
+                claves_grupo.append(grupo)
+        if len(claves_grupo) == 0:
             arch.write("MAX;0;\n")
             arch.write("MIN;0;\n")
         else:
-            arch.write(f"TOTAL DE INTEGRANTES POR GRUPO\n")
-            max_c = min_c = len(dicc[ks[0]])
-            gmax = [ks[0]]
-            gmin = [ks[0]]
-            for i in range(1, len(ks)):
-                g = ks[i]
-                c = len(dicc[g])
-                if c > max_c:
-                    max_c, gmax = c, [g]
-                elif c == max_c:
-                    gmax.append(g)
-                if c < min_c:
-                    min_c, gmin = c, [g]
-                elif c == min_c:
-                    gmin.append(g)
-            arch.write(f"MAX;{max_c};{'|'.join(gmax)}\n")
-            arch.write(f"MIN;{min_c};{'|'.join(gmin)}\n")
+            arch.write(f"MAX/MIN;CANTIDAD INTEGRANTES;GRUPO")
+            primer_grupo = claves_grupo[0]
+            maximo_cantidad = len(dicc[primer_grupo])
+            minimo_cantidad = len(dicc[primer_grupo])
+            grupos_maximo = [primer_grupo]
+            grupos_minimo = [primer_grupo]
+            for i in range(1, len(claves_grupo)):
+                grupo_actual = claves_grupo[i]
+                cantidad_integrantes = len(dicc[grupo_actual])
+                if cantidad_integrantes > maximo_cantidad:
+                    maximo_cantidad = cantidad_integrantes
+                    grupos_maximo = [grupo_actual]
+                elif cantidad_integrantes == maximo_cantidad:
+                    grupos_maximo.append(grupo_actual)
+                if cantidad_integrantes < minimo_cantidad:
+                    minimo_cantidad = cantidad_integrantes
+                    grupos_minimo = [grupo_actual]
+                elif cantidad_integrantes == minimo_cantidad:
+                    grupos_minimo.append(grupo_actual)
+            arch.write(f"MAX;{maximo_cantidad};{'|'.join(grupos_maximo)}\n")
+            arch.write(f"MIN;{minimo_cantidad};{'|'.join(grupos_minimo)}\n")
         arch.close()
 
 
@@ -303,6 +310,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
