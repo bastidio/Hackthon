@@ -1,7 +1,16 @@
 from faker import Faker
 import random
 
-def agregar_faker_usuario(cantidad=1):
+def registrar_bitacora(usuario, accion):
+    try:
+        f = open("bitacora.txt", "a", encoding="utf-8")
+        f.write(f"Usuario: {usuario or 'Desconocido'} | Acción: {accion}\n")
+        f.close()
+    except IOError:
+        print("Error al escribir en la bitácora.")
+
+
+def agregar_faker_usuario(cantidad=5):
     fake = Faker("es_ES")
     generarArchivoUsuarios()
 
@@ -341,30 +350,35 @@ def eliminarUsuario():
     eliminado = False
 
     for linea in arch:
-        partes = linea.rstrip("\n").split(",")
+        partes = linea.strip().split(",")
         if len(partes) != 4:
             continue
-        u, n, d, c = partes
-        # solo elimina si coincide usuario Y contraseña
-        if u.strip().lower() == usuario and c.strip() == clave:
+        u, n, d, c = [p.strip() for p in partes]
+
+        # Comparamos limpiando espacios y usando lower() solo en usuario
+        if u.lower() == usuario and c == clave:
             eliminado = True
             continue
-        filas.append(linea)
+        filas.append(f"{u},{n},{d},{c}\n")
+
     arch.close()
 
     try:
         arch = open("usuarios.csv", "wt")
     except IOError:
         print("Error al reescribir el archivo de usuarios.")
+        return
+
+    arch.write("usuario,nombre,dni,contraseña\n")
+    for linea in filas:
+        arch.write(linea)
+    arch.close()
+
+    if eliminado:
+        print(f"Usuario '{usuario}' eliminado correctamente.")
     else:
-        arch.write("usuario,nombre,dni,contraseña\n")
-        for linea in filas:
-            arch.write(linea)
-        arch.close()
-        if eliminado:
-            print("Usuario eliminado correctamente.")
-        else:
-            print("Usuario/clave incorrectos.")
+        print("No se encontró un usuario con esas credenciales.")
+
 
 
 
@@ -408,36 +422,54 @@ def mostrarEquipos():
 
 def generaArchivo():
     try:
-        arch=open("hackaton.csv","wt")
+        arch = open("hackaton.csv", "wt", encoding="utf-8")
     except IOError:
         print("Error al abrir el archivo")
-    else:
-        arch.write("GRUPO;DNI;NOMBRE;PYTHON;JAVA;C++;JAVASCRIPT;PHP;C#\n")
-        listaDNI=[]
-        listaNombres=[]
-        lenguajes=["Python", "Java", "C++", "JavaScript", "PHP", "C#"]
-        grupo=1
+        return
+
+    arch.write("GRUPO;DNI;NOMBRE;PYTHON;JAVA;C++;JAVASCRIPT;PHP;C#\n")
+    lenguajes = ["Python", "Java", "C++", "JavaScript", "PHP", "C#"]
+    grupo = 1
+
+    while True:
+        print(f"\n--- Cargando integrantes del grupo {grupo} ---")
+
+        listaDNI = []
+        listaNombres = []
+
         while True:
-            dni=validarDNI("Ingrese su DNI (entre 7 y 8 caracteres)(Vacio para terminar): ",7,8)
-            if dni=="":
+            dni = validarDNI("Ingrese su DNI (entre 7 y 8 caracteres) (vacío para terminar este grupo): ", 7, 8)
+            if dni == "":
                 break
             if dni in listaDNI:
-                print("Este DNI ya ha sido registrado. Vuelva a intentar")
+                print("Este DNI ya ha sido registrado en este grupo. Vuelva a intentar.")
                 continue
-            else:
-                nombre=validarNombre("Ingrese su nombre y apellido: ",3)
-                print (nombre)
-                niveles=[]
-                niveles=cargarHabilidades()
-                linea=f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
-                arch.write(linea)
-                listaDNI.append(dni)
-                seguirMismo = input("¿Agregar otro participante a ESTE grupo? (si/no): ").strip().lower()
-                while seguirMismo not in ("si", "no"):
-                    agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes, 4)
-                    
-        arch.close()
-        print("Archivo generado con exito.")
+
+            nombre = validarNombre("Ingrese su nombre y apellido: ", 3)
+            niveles = cargarHabilidades()
+            linea = f"{grupo};{dni};{nombre};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
+            arch.write(linea)
+            listaDNI.append(dni)
+            listaNombres.append(nombre)
+
+            seguir = input("¿Agregar integrantes Faker a este grupo? (si/no): ").strip().lower()
+            if seguir == "si":
+                cantidad = validarNumero("¿Cuántos Faker querés agregar?: ", 1, 10)
+                agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes, cantidad)
+
+            continuar = input("¿Desea agregar otro participante manualmente al mismo grupo? (si/no): ").strip().lower()
+            if continuar == "no":
+                break
+
+        nuevo_grupo = input("¿Desea crear un nuevo grupo? (si/no): ").strip().lower()
+        if nuevo_grupo == "si":
+            grupo += 1
+        else:
+            break
+
+    arch.close()
+    print("Archivo generado con éxito.")
+
 
 
 def generaDiccionario(dicc):
@@ -638,8 +670,9 @@ def generaReporteCantidadIntegrantes(dicc):
 
 def main():
     mensajeBienvenida()
-    generarArchivoUsuarios()  # asegura usuarios.csv con encabezado
-    sesion_iniciada = False   # nueva variable para controlar el login
+    generarArchivoUsuarios()
+    sesion_iniciada = False
+    usuario_actual = None  # para saber quién está logueado
 
     while True:
         print("\n=== MENÚ PRINCIPAL ===")
@@ -649,31 +682,41 @@ def main():
         print("4. Modificar usuario o contraseña")
         print("5. Eliminar usuario")
         print("6. Cargar participantes")
-        print("7. Salir")
+        print("7. Generar reportes")
+        print("8. Salir")
 
-        op = input("Elegí una opción (1-7): ").strip()
+        op = input("Elegí una opción (1-8): ").strip()
+
         if op == "1":
-            agregar_faker_usuario()
             registrarUsuario()
+            agregar_faker_usuario(5)
+            registrar_bitacora(usuario_actual, "Registró un nuevo usuario")
         elif op == "2":
             if iniciarSesion():
                 sesion_iniciada = True
+                usuario_actual = input("Ingrese nuevamente su usuario para registro en bitácora: ").strip().lower()
+                registrar_bitacora(usuario_actual, "Inició sesión")
         elif op == "3":
             mostrarEquipos()
+            registrar_bitacora(usuario_actual, "Consultó los equipos")
         elif op == "4":
             print("\n1) Modificar usuario\n2) Modificar contraseña")
             sub = input("Elegí (1/2): ").strip()
             if sub == "1":
                 modificarUsuario()
+                registrar_bitacora(usuario_actual, "Modificó su nombre de usuario")
             elif sub == "2":
                 modificarClave()
+                registrar_bitacora(usuario_actual, "Modificó su contraseña")
             else:
                 print("Opción inválida.")
         elif op == "5":
             eliminarUsuario()
+            registrar_bitacora(usuario_actual, "Eliminó un usuario")
         elif op == "6":
             if sesion_iniciada:
                 generaArchivo()
+                registrar_bitacora(usuario_actual, "Cargó participantes")
             else:
                 print("Debe iniciar sesión antes de cargar participantes.")
         elif op == "7":
@@ -683,13 +726,14 @@ def main():
             generaReportePromedio(dicc)
             generaReporteCantidadIntegrantes(dicc)
             print("Reportes generados correctamente.")
+            registrar_bitacora(usuario_actual, "Generó reportes")
         elif op == "8":
+            registrar_bitacora(usuario_actual, "Salió del sistema")
             print("\nGracias por usar el sistema de inscripción de SkillMatch.")
             break
         else:
             print("Opción inválida. Probá de nuevo.")
 
 
-if __name__ == "__main__":
 
-    main()
+
