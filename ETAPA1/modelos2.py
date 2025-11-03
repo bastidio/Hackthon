@@ -1,3 +1,31 @@
+from faker import Faker
+import random
+
+def agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes, cantidad):
+    fake = Faker("es_ES")
+
+    for k in range(cantidad):
+        nombre_fake = fake.name()
+        dni_fake = str(random.randint(30000000, 50000000))
+        while dni_fake in listaDNI:
+            dni_fake = str(random.randint(30000000, 50000000))
+
+        listaDNI.append(dni_fake)
+        listaNombres.append(nombre_fake)
+
+        niveles_posibles = ["Nulo", "Básico", "Intermedio", "Avanzado"]
+        niveles = [random.choice(niveles_posibles) for _ in lenguajes]
+
+        linea_fake = f"{grupo};{dni_fake};{nombre_fake};{niveles[0]};{niveles[1]};{niveles[2]};{niveles[3]};{niveles[4]};{niveles[5]}\n"
+        arch.write(linea_fake)
+
+        print(f"Integrante Faker #{k+1}: {nombre_fake} (DNI: {dni_fake})")
+        for i, lang in enumerate(lenguajes):
+            print(f"  - {lang}: {niveles[i]}")
+        print()
+
+    print(f"Se agregaron {cantidad} integrantes Faker al grupo {grupo}.\n")
+
 def mensajeBienvenida():
     print(
         "=" * 80 + "\n" +
@@ -152,7 +180,7 @@ def registrarUsuario():
     except IOError:
         print("Error al abrir el archivo de usuarios para escribir.")
     else:
-        arch.write(f"{usuario},{nombre},{dni},{clave}\n")
+        arch.write(f"{usuario},{clave}\n")
         arch.close()
         print(f"Usuario '{usuario}' registrado correctamente.")
 
@@ -353,6 +381,8 @@ def generaArchivo():
     else:
         arch.write("GRUPO;DNI;NOMBRE;PYTHON;JAVA;C++;JAVASCRIPT;PHP;C#\n")
         listaDNI=[]
+        listaNombres=[]
+        lenguajes=["Python", "Java", "C++", "JavaScript", "PHP", "C#"]
         grupo=1
         while True:
             dni=validarDNI("Ingrese su DNI (entre 7 y 8 caracteres)(Vacio para terminar): ",7,8)
@@ -371,9 +401,8 @@ def generaArchivo():
                 listaDNI.append(dni)
                 seguirMismo = input("¿Agregar otro participante a ESTE grupo? (si/no): ").strip().lower()
                 while seguirMismo not in ("si", "no"):
-                    seguirMismo = input("Responda si/no: ").strip().lower()
-                if seguirMismo == "no":
-                    grupo += 1
+                    agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes, 4)
+                    
         arch.close()
         print("Archivo generado con exito.")
 
@@ -618,4 +647,3 @@ def main():
 if __name__ == "__main__":
 
     main()
-
