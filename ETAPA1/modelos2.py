@@ -156,33 +156,36 @@ def registrarUsuario():
 
     while True:
         usuario = input("Ingrese un nombre de usuario: ").strip().lower()
-        if not usuario or "," in usuario:
-            print("Usuario inválido (no vacío, sin comas).")
+        if usuario == "":
+            usuario = "usuario" + str(random.randint(100, 999))
+            print(f"Nombre de usuario asignado automáticamente: {usuario}")
+        elif "," in usuario:
+            print("Usuario inválido (sin comas).")
             continue
         if usuarioExistente(usuario):
             print("Ese usuario ya existe. Ingrese otro.")
             continue
         break
 
+    nombre = input("Nombre completo: ").strip().title()
+    dni = validarDNI("Ingrese su DNI (7 u 8 dígitos): ", 7, 8)
 
     while True:
-        try:
-            clave = input("Ingrese una contraseña (mín. 6 caracteres): ").strip()
-            if len(clave) >= 6:
-                break
-            else:
-                raise ValueError
-        except ValueError:
-            print("La contraseña debe tener al menos 6 caracteres.")
+        clave = input("Ingrese una contraseña (mín. 6 caracteres): ").strip()
+        if len(clave) >= 6:
+            break
+        print("La contraseña debe tener al menos 6 caracteres.")
 
     try:
         arch = open("usuarios.csv", "at")
     except IOError:
         print("Error al abrir el archivo de usuarios para escribir.")
     else:
-        arch.write(f"{usuario},{clave}\n")
+        arch.write(f"{usuario},{nombre},{dni},{clave}\n")
         arch.close()
         print(f"Usuario '{usuario}' registrado correctamente.")
+
+
 
 
 def iniciarSesion():
@@ -305,34 +308,38 @@ def eliminarUsuario():
         arch = open("usuarios.csv", "rt")
     except IOError:
         print("Error al abrir el archivo de usuarios.")
-    else:
-        encabezado = arch.readline()
-        filas = []
-        eliminado = False
-        for linea in arch:
-            partes = linea.rstrip("\n").split(",")
-            if len(partes) != 4:
-                continue
-            u, n, d, c = partes
-            if u.strip().lower() == usuario and c.strip() == clave:
-                eliminado = True
-            else:
-                filas.append(linea)
-        arch.close()
+        return
 
-        try:
-            arch = open("usuarios.csv", "wt")
-        except IOError:
-            print("Error al reescribir el archivo de usuarios.")
+    encabezado = arch.readline()
+    filas = []
+    eliminado = False
+
+    for linea in arch:
+        partes = linea.rstrip("\n").split(",")
+        if len(partes) != 4:
+            continue
+        u, n, d, c = partes
+        # solo elimina si coincide usuario Y contraseña
+        if u.strip().lower() == usuario and c.strip() == clave:
+            eliminado = True
+            continue
+        filas.append(linea)
+    arch.close()
+
+    try:
+        arch = open("usuarios.csv", "wt")
+    except IOError:
+        print("Error al reescribir el archivo de usuarios.")
+    else:
+        arch.write("usuario,nombre,dni,contraseña\n")
+        for linea in filas:
+            arch.write(linea)
+        arch.close()
+        if eliminado:
+            print("Usuario eliminado correctamente.")
         else:
-            arch.write("usuario,nombre,dni,contraseña\n")
-            for linea in filas:
-                arch.write(linea)
-            arch.close()
-            if eliminado:
-                print("Usuario eliminado correctamente.")
-            else:
-                print("Usuario/clave incorrectos.")
+            print("Usuario/clave incorrectos.")
+
 
 
 def mostrarEquipos():
@@ -606,6 +613,7 @@ def generaReporteCantidadIntegrantes(dicc):
 def main():
     mensajeBienvenida()
     generarArchivoUsuarios()  # asegura usuarios.csv con encabezado
+    sesion_iniciada = False   # nueva variable para controlar el login
 
     while True:
         print("\n=== MENÚ PRINCIPAL ===")
@@ -621,7 +629,8 @@ def main():
         if op == "1":
             registrarUsuario()
         elif op == "2":
-            iniciarSesion()
+            if iniciarSesion():
+                sesion_iniciada = True
         elif op == "3":
             mostrarEquipos()
         elif op == "4":
@@ -636,9 +645,12 @@ def main():
         elif op == "5":
             eliminarUsuario()
         elif op == "6":
-            generaArchivo()
+            if sesion_iniciada:
+                generaArchivo()
+            else:
+                print("Debe iniciar sesión antes de cargar participantes.")
         elif op == "7":
-            print("\n¡Gracias por usar el sistema de inscripción de SkillMatch! Éxitos en el hackathon.")
+            print("\nGracias por usar el sistema de inscripción de SkillMatch.")
             break
         else:
             print("Opción inválida. Probá de nuevo.")
