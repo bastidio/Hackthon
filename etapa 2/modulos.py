@@ -1,16 +1,16 @@
 from faker import Faker
 import random
 
-def registrar_bitacora(usuario, accion):
+def registrarBitacora(usuario, accion):
     try:
-        f = open("bitacora.txt", "a", encoding="utf-8")
-        f.write(f"Usuario: {usuario or 'Desconocido'} | Acción: {accion}\n")
-        f.close()
+        arch = open("bitacora.txt", "a")
+        arch.write(f"Usuario: {usuario or 'Desconocido'} | Acción: {accion}\n")
+        arch.close()
     except IOError:
         print("Error al escribir en la bitácora.")
 
 
-def agregar_faker_usuario(cantidad=5):
+def agregarFakerUsuario(cantidad=5):
     fake = Faker("es_ES")
     generarArchivoUsuarios()
 
@@ -36,7 +36,7 @@ def agregar_faker_usuario(cantidad=5):
     print("Usuario(s) Faker agregado(s) correctamente.")
 
 
-def agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes, cantidad):
+def agregarFakerEquipo(arch, grupo, listaDNI, listaNombres, lenguajes, cantidad):
     fake = Faker("es_ES")
 
     for k in range(cantidad):
@@ -355,7 +355,6 @@ def eliminarUsuario():
             continue
         u, n, d, c = [p.strip() for p in partes]
 
-        # Comparamos limpiando espacios y usando lower() solo en usuario
         if u.lower() == usuario and c == clave:
             eliminado = True
             continue
@@ -455,7 +454,7 @@ def generaArchivo():
             seguir = input("¿Agregar integrantes Faker a este grupo? (si/no): ").strip().lower()
             if seguir == "si":
                 cantidad = validarNumero("¿Cuántos Faker querés agregar?: ", 1, 10)
-                agregar_faker_equipo(arch, grupo, listaDNI, listaNombres, lenguajes, cantidad)
+                agregarFakerEquipo(arch, grupo, listaDNI, listaNombres, lenguajes, cantidad)
 
             continuar = input("¿Desea agregar otro participante manualmente al mismo grupo? (si/no): ").strip().lower()
             if continuar == "no":
@@ -672,7 +671,7 @@ def main():
     mensajeBienvenida()
     generarArchivoUsuarios()
     sesion_iniciada = False
-    usuario_actual = None  # para saber quién está logueado
+    usuario_actual = None
 
     while True:
         print("\n=== MENÚ PRINCIPAL ===")
@@ -689,34 +688,34 @@ def main():
 
         if op == "1":
             registrarUsuario()
-            agregar_faker_usuario(5)
-            registrar_bitacora(usuario_actual, "Registró un nuevo usuario")
+            agregarFakerUsuario(5)
+            registrarBitacora(usuario_actual, "Registró un nuevo usuario")
         elif op == "2":
             if iniciarSesion():
                 sesion_iniciada = True
                 usuario_actual = input("Ingrese nuevamente su usuario para registro en bitácora: ").strip().lower()
-                registrar_bitacora(usuario_actual, "Inició sesión")
+                registrarBitacora(usuario_actual, "Inició sesión")
         elif op == "3":
             mostrarEquipos()
-            registrar_bitacora(usuario_actual, "Consultó los equipos")
+            registrarBitacora(usuario_actual, "Consultó los equipos")
         elif op == "4":
             print("\n1) Modificar usuario\n2) Modificar contraseña")
             sub = input("Elegí (1/2): ").strip()
             if sub == "1":
                 modificarUsuario()
-                registrar_bitacora(usuario_actual, "Modificó su nombre de usuario")
+                registrarBitacora(usuario_actual, "Modificó su nombre de usuario")
             elif sub == "2":
                 modificarClave()
-                registrar_bitacora(usuario_actual, "Modificó su contraseña")
+                registrarBitacora(usuario_actual, "Modificó su contraseña")
             else:
                 print("Opción inválida.")
         elif op == "5":
             eliminarUsuario()
-            registrar_bitacora(usuario_actual, "Eliminó un usuario")
+            registrarBitacora(usuario_actual, "Eliminó un usuario")
         elif op == "6":
             if sesion_iniciada:
                 generaArchivo()
-                registrar_bitacora(usuario_actual, "Cargó participantes")
+                registrarBitacora(usuario_actual, "Cargó participantes")
             else:
                 print("Debe iniciar sesión antes de cargar participantes.")
         elif op == "7":
@@ -726,16 +725,10 @@ def main():
             generaReportePromedio(dicc)
             generaReporteCantidadIntegrantes(dicc)
             print("Reportes generados correctamente.")
-            registrar_bitacora(usuario_actual, "Generó reportes")
+            registrarBitacora(usuario_actual, "Generó reportes")
         elif op == "8":
-            registrar_bitacora(usuario_actual, "Salió del sistema")
+            registrarBitacora(usuario_actual, "Salió del sistema")
             print("\nGracias por usar el sistema de inscripción de SkillMatch.")
             break
         else:
             print("Opción inválida. Probá de nuevo.")
-
-
-
-
-
-    main()
