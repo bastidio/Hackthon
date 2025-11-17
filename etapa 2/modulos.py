@@ -187,8 +187,6 @@ def controlCredenciales(usuario, clave):
 
 
 def registrarUsuario():
-    generarArchivoUsuarios()
-
     while True:
         usuario = input("Ingrese un nombre de usuario: ").strip().lower()
         if usuario == "":
