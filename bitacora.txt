@@ -1,0 +1,11 @@
+Usuario: Desconocido | Acción: Registró un nuevo usuario
+Usuario: ftoscano | Acción: Inició sesión
+Usuario: ftoscano | Acción: Consultó los equipos
+Usuario: ftoscano | Acción: Eliminó un usuario
+Usuario: ftoscano | Acción: Cargó participantes
+Usuario: ftoscano | Acción: Cargó participantes
+Usuario: ftoscano | Acción: Generó reportes
+Usuario: ftoscano | Acción: Cargó participantes
+Usuario: ftoscano | Acción: Generó reportes
+Usuario: ftoscano | Acción: Cargó participantes
+Usuario: ftoscano | Acción: Generó reportes
